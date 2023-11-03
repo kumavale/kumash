@@ -1,2 +1,2 @@
-pub mod shell;
 pub mod parser;
+pub mod shell;
