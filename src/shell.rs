@@ -31,15 +31,15 @@ impl Shell {
             let status = self.execute(command);
 
             // Postprocess
-            if status == 0 {
-                prompt = String::from("$ ");
-            } else {
-                prompt = format!("[{status}]$ ");
+            match status {
+                Ok(0) => prompt = String::from("$ "),
+                Ok(code) => prompt = format!("[{code}]$ "),
+                Err(e) => log::error!("fatal error: {e}"),
             }
         }
     }
 
-    fn execute(&self, command: Vec<&str>) -> i32 {
+    fn execute(&self, command: Vec<&str>) -> Result<i32, i32> {
         if command[0] == "exit" {
             println!("(^-^)/~~");
             std::process::exit(0);
@@ -49,34 +49,33 @@ impl Shell {
             .into_iter()
             .map(|s| CString::new(s).unwrap())
             .collect::<Vec<_>>();
-        let bin = command[0].as_c_str();
-        let args = command.iter().map(|s| s.as_c_str()).collect::<Vec<_>>();
+        let filename = command[0].as_c_str();
 
         match unsafe { fork() } {
             Ok(ForkResult::Parent { child }) => {
                 log::debug!("PID: parent({})", getpid());
                 match waitpid(child, None) {
                     Ok(stat) => match stat {
-                        WaitStatus::Exited(_, exitcode) => exitcode,
-                        _ => 1,
+                        WaitStatus::Exited(_, exitcode) => Ok(exitcode),
+                        _ => Ok(1),
                     },
                     Err(_) => {
                         log::error!("waitpid failed");
-                        0
+                        Err(1)
                     }
                 }
             }
             Ok(ForkResult::Child) => {
                 log::debug!("PID: child({})", getpid());
-                if let Err(e) = execvp(bin, &args) {
+                if let Err(e) = execvp(filename, &command) {
                     std::process::exit(e as i32);
                 } else {
-                    0
+                    Ok(0)
                 }
             }
             Err(_) => {
                 log::error!("fork failed");
-                1
+                Err(1)
             }
         }
     }
