@@ -67,11 +67,12 @@ impl Shell {
             }
             Ok(ForkResult::Child) => {
                 log::debug!("PID: child({})", getpid());
-                if let Err(e) = execvp(filename, &command) {
-                    std::process::exit(e as i32);
+                let exitcode = if let Err(e) = execvp(filename, &command) {
+                    e as i32
                 } else {
-                    Ok(0)
-                }
+                    0
+                };
+                std::process::exit(exitcode);
             }
             Err(_) => {
                 log::error!("fork failed");
