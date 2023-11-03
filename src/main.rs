@@ -1,3 +1,6 @@
+use kumash::shell::Shell;
+
 fn main() {
-    println!("Hello, world!");
+    let shell = Shell::default();
+    shell.start();
 }
