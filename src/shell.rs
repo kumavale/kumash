@@ -9,11 +9,9 @@ pub struct Shell {}
 
 impl Shell {
     pub fn start(&self) -> ! {
-        let mut prompt = String::from("$ ");
-
         loop {
             // Prompt
-            print!("{prompt}");
+            print!("$ ");
             io::stdout().flush().unwrap();
 
             // Read line
@@ -27,13 +25,8 @@ impl Shell {
             }
 
             // Execute
-            let status = self.execute(tokens);
-
-            // Postprocess
-            match status {
-                Ok(0) => prompt = String::from("$ "),
-                Ok(code) => prompt = format!("{code}$ "),
-                Err(e) => log::error!("fatal error: {e}"),
+            if let Err(e) = self.execute(tokens) {
+                log::error!("fatal error: {e}");
             }
         }
     }
