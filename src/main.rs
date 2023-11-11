@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use std::io::{self, Write};
 use std::process::Command;
 
@@ -15,10 +14,7 @@ fn main() {
         io::stdin().read_line(&mut input_line).unwrap();
 
         // Parse input line
-        let tokens = input_line.split_whitespace().collect::<Vec<&str>>();
-        if tokens.is_empty() {
-            continue;
-        }
+        let tokens = input_line.split_whitespace();
 
         // Execute
         if let Err(e) = execute(tokens) {
@@ -27,14 +23,23 @@ fn main() {
     }
 }
 
-fn execute(tokens: Vec<&str>) -> anyhow::Result<i32> {
-    if tokens[0] == "exit" {
-        println!("(^-^)/~~");
-        std::process::exit(0);
-    }
+fn execute<'a, I>(mut tokens: I) -> anyhow::Result<()>
+where
+    I: Iterator<Item = &'a str>,
+{
+    let command = match tokens.next() {
+        Some(command) => command,
+        None => return Ok(()),
+    };
 
-    let bin = tokens[0];
-    let args = if tokens.len() == 1 { &[] } else { &tokens[1..] };
-    let status = Command::new(bin).args(args).status()?;
-    status.code().ok_or(anyhow!("Process terminated by signal"))
+    match command {
+        "exit" => {
+            println!("(^-^)/~~");
+            std::process::exit(0);
+        }
+        _ => {
+            Command::new(command).args(tokens).spawn()?.wait()?;
+        }
+    }
+    Ok(())
 }
