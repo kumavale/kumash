@@ -3,8 +3,6 @@ use std::io::{self, Write};
 use std::process::{Child, Command, Stdio};
 
 fn main() {
-    env_logger::init();
-
     loop {
         // Prompt
         print!("$ ");
@@ -26,7 +24,7 @@ fn main() {
             match execute(tokens, previous_process, stdout) {
                 Ok(child) => previous_process = Some(child),
                 Err(e) => {
-                    log::error!("kumash error: {e}");
+                    eprintln!("kumash error: {e}");
                     previous_process = None;
                     break;
                 }
@@ -36,7 +34,7 @@ fn main() {
         if let Some(final_process) = previous_process {
             match final_process.wait_with_output() {
                 Ok(output) => io::stdout().write_all(&output.stdout).unwrap(),
-                Err(e) => log::error!("kumash error: {e}"),
+                Err(e) => eprintln!("kumash error: {e}"),
             }
         }
     }
