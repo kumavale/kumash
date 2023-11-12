@@ -2,28 +2,6 @@ use anyhow::Context;
 use std::io::{self, Write};
 use std::process::{Child, Command, Stdio};
 
-#[derive(Debug)]
-enum Token<'a> {
-    Command(&'a str),
-    Pipe,
-    Redirect,
-}
-
-fn parse(input: &str) -> Vec<Token<'_>> {
-    let tokens = input.split_inclusive(|c| c == '|' || c == '>');
-    tokens
-        .map(|t| if t.ends_with("|") {
-            vec![]
-        } else if t.ends_with(">") {
-        } else {
-        }
-            "|" => Token::Pipe,
-            ">" => Token::Redirect,
-            _ => Token::Command(t),
-        })
-        .collect()
-}
-
 fn main() {
     loop {
         // Prompt
@@ -35,30 +13,15 @@ fn main() {
         io::stdin().read_line(&mut input_line).unwrap();
 
         // Parse input line
-        let mut commands = parse(&input_line).into_iter().peekable();
-        eprintln!("{commands:?}");
+        let mut commands = input_line.split(" | ").peekable();
 
         let mut previous_process = None;
-        while let Some(token) = commands.next() {
-            let command = match token {
-                Token::Command(s) => s.split_whitespace(),
-                _ => {
-                    eprintln!("unexpected token: {token:?}");
-                    break;
-                }
-            };
+        while let Some(command) = commands.next() {
+            let tokens = command.split_whitespace();
 
             // Execute
-            let stdout = match commands.peek() {
-                Some(Token::Pipe) => {
-                    commands.next();
-                    Stdio::piped()
-                }
-                Some(Token::Redirect) => todo!(),
-                Some(Token::Command(s)) => unreachable!("{s}"),
-                None => Stdio::inherit(),
-            };
-            match execute(command, previous_process, stdout) {
+            let stdout = commands.peek().map_or(Stdio::inherit(), |_| Stdio::piped());
+            match execute(tokens, previous_process, stdout) {
                 Ok(child) => previous_process = Some(child),
                 Err(e) => {
                     eprintln!("kumash error: {e}");
