@@ -92,23 +92,20 @@ fn read_input() -> String {
                     let (_, [complement]) = matches[0];
                     input += &format!("{complement} ");
                     print!("{complement} ");
-                    io::stdout().flush().unwrap();
                 } else {
                     println!(
                         "\n{}",
                         matches
                             .iter()
-                            .map(|(a, _)| *a)
+                            .map(|(m, _)| *m)
                             .collect::<Vec<_>>()
                             .join(" ")
                     );
                     print!("$ {input}");
-                    io::stdout().flush().unwrap();
                 }
             }
             Key::Char(ch) => {
                 print!("{ch}");
-                io::stdout().flush().unwrap();
                 if ch == '\r' {
                     println!();
                     break;
@@ -117,6 +114,7 @@ fn read_input() -> String {
             }
             _ => continue,
         }
+        io::stdout().flush().unwrap();
     }
     input
 }
