@@ -23,7 +23,7 @@ $ exit
 - pipe
 
 ```
-$ cat src/main.rs| grep unwrap
+$ cat src/main.rs | grep unwrap
         io::stdout().flush().unwrap();
                 Ok(output) => io::stdout().write_all(&output.stdout).unwrap(),
                 Stdio::from(child.stdout.unwrap())
