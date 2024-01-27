@@ -70,7 +70,53 @@ where
 }
 
 fn read_input() -> String {
+    use getch_rs::{Getch, Key};
+    use regex::Regex;
+
     let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
+    let g = Getch::new();
+
+    while let Ok(key) = g.getch() {
+        match key {
+            Key::Char('\t') => {
+                let last_token = input.split_whitespace().last().unwrap_or("");
+                let re = Regex::new(&format!(r"\b{last_token}([\w.]*)\b")).unwrap();
+                let output = Command::new("ls").output().unwrap();
+                let output = String::from_utf8_lossy(&output.stdout);
+                let matches = re
+                    .captures_iter(&output)
+                    .map(|c| c.extract())
+                    .collect::<Vec<_>>();
+
+                if matches.len() == 1 {
+                    let (_, [complement]) = matches[0];
+                    input += &format!("{complement} ");
+                    print!("{complement} ");
+                    io::stdout().flush().unwrap();
+                } else {
+                    println!(
+                        "\n{}",
+                        matches
+                            .iter()
+                            .map(|(a, _)| *a)
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    );
+                    print!("$ {input}");
+                    io::stdout().flush().unwrap();
+                }
+            }
+            Key::Char(ch) => {
+                print!("{ch}");
+                io::stdout().flush().unwrap();
+                if ch == '\r' {
+                    println!();
+                    break;
+                }
+                input.push(ch);
+            }
+            _ => continue,
+        }
+    }
     input
 }
