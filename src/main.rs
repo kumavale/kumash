@@ -1,4 +1,3 @@
-use anyhow::Context;
 use std::io::{self, Write};
 use std::process::{Child, Command, Stdio};
 
@@ -9,11 +8,10 @@ fn main() {
         io::stdout().flush().unwrap();
 
         // Read line
-        let mut input_line = String::new();
-        io::stdin().read_line(&mut input_line).unwrap();
+        let input = read_input();
 
         // Parse input line
-        let mut commands = input_line.split(" | ").peekable();
+        let mut commands = input.split(" | ").peekable();
 
         let mut previous_process = None;
         while let Some(command) = commands.next() {
@@ -44,11 +42,13 @@ fn execute<'a, I>(
     mut tokens: I,
     previous_process: Option<Child>,
     stdout: Stdio,
-) -> anyhow::Result<Child>
+) -> Result<Child, &'static str>
 where
     I: Iterator<Item = &'a str>,
 {
-    let command = tokens.next().context("no command entered")?;
+    let Some(command) = tokens.next() else {
+        return Err("no command entered");
+    };
     match command {
         "exit" => {
             println!("(^-^)/~~");
@@ -62,8 +62,15 @@ where
                 .args(tokens)
                 .stdin(stdin)
                 .stdout(stdout)
-                .spawn()?;
+                .spawn()
+                .unwrap();
             Ok(child)
         }
     }
+}
+
+fn read_input() -> String {
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    input
 }
